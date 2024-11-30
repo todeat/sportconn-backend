@@ -1,13 +1,17 @@
-// src/app.js
 const express = require("express");
 const cors = require("cors");  // Importează CORS
 const routes = require("./routes");
 
 const app = express();
 
-// Configurează CORS pentru a permite cereri de la frontend-ul local
+// Configurează CORS pentru a permite cereri de la mai multe origini
 app.use(cors({
-    origin: "http://localhost:3000"  // Adaugă domeniul frontend-ului tău aici
+    origin: [
+        "http://localhost:3000",  // Pentru dezvoltare locală
+        "https://sportconn-frontend.vercel.app"  // Pentru producție
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,  // Dacă folosești cookies sau autentificare bazată pe sesiuni
 }));
 
 app.use(express.json());
