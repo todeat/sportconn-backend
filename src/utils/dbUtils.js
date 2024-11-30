@@ -115,6 +115,29 @@ async function isUserAdminOfLocation(uid, locationId) {
     }
 }
 
+async function isUserAdmin(uid) {
+    try {
+        if (!uid) {
+            throw new Error("UID este obligatoriu");
+        }
+
+        const result = await db.query(
+            `SELECT EXISTS (
+                SELECT 1 
+                FROM mod_dms_gen_sconn___admin_locations 
+                WHERE uid = $1 
+                AND role = 'admin'
+            ) as "isAdmin"`,
+            [uid]
+        );
+
+        return result.rows[0]?.isAdmin || false;
+    } catch (error) {
+        console.error("Error in isUserAdmin:", error);
+        throw error;
+    }
+}
+
 async function getLocationIdByCourtId(courtId) {
     if (!courtId) {
         throw new Error("CourtId este obligatoriu");
@@ -226,5 +249,6 @@ module.exports = {
     isUserAdminOfLocation,
     getCourtsByLocationId,
     getLocationSchedule,
-    getLocationPhoneNumber
+    getLocationPhoneNumber,
+    isUserAdmin
 };
