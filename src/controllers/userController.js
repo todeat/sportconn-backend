@@ -1,6 +1,6 @@
 // src/controllers/userController.js
 const userModel = require("../models/userModel");
-const { generateUniqueUsername } = require("../utils/dbUtils");
+const { generateUniqueUsername, isUserAdmin } = require("../utils/dbUtils");
 
 const locationModel = require("../models/locationModel");
 
@@ -33,31 +33,45 @@ exports.getUserInfo = async (req, res) => {
     try {
         const uid = req.user.uid;
 
+        // Obține informațiile de bază ale utilizatorului
         const userInfo = await userModel.getUserBasicInfo(uid);
         if (!userInfo) {
             return res.status(404).json({ message: "Utilizatorul nu a fost găsit." });
         }
 
-        const locations = await userModel.getUserAdminLocations(uid);
+        // Verifică dacă utilizatorul este admin
+        const isAdminUser = await isUserAdmin(uid);
 
-        const adminInfo = {
-            isAdmin: locations.length > 0,
-            locationsCount: locations.length,
-            locationsInfo: await Promise.all(locations.map(async (location) => ({
-                locationId: location.locationid,
-                locationName: location.locationname,
-                status: location.status,
-                isValid: location.isvalid ? "1" : "0",
-                schedule: location.schedule,
-                address: location.address,
-                description: location.description,
-                cityId: location.cityid,
-                cityName: location.cityname,
-                courts: await locationModel.getLocationCourts(location.locationid)
-            })))
+        userInfo.adminInfo = {
+            isAdmin: isAdminUser,
+            locationsCount: 0,
+            locationsInfo: []
         };
 
-        userInfo.adminInfo = adminInfo;
+        // Dacă este admin, obține informațiile complete
+        if (isAdminUser) {
+            const locations = await userModel.getUserAdminLocations(uid);
+            
+            userInfo.adminInfo = {
+                isAdmin: locations.length > 0,
+                locationsCount: locations.length,
+                locationsInfo: await Promise.all(locations.map(async (location) => ({
+                    locationId: location.locationid,
+                    locationName: location.locationname,
+                    status: location.status,
+                    isValid: location.isvalid ? "1" : "0",
+                    schedule: location.schedule,
+                    address: location.address,
+                    description: location.description,
+                    cityId: location.cityid,
+                    cityName: location.cityname,
+                    courts: await locationModel.getLocationCourts(location.locationid)
+                })))
+            };
+        }
+
+        // Ne asigurăm că toate câmpurile necesare există
+        console.log("Returning user info:", JSON.stringify(userInfo, null, 2));
 
         res.json({
             success: true,
@@ -65,7 +79,11 @@ exports.getUserInfo = async (req, res) => {
         });
     } catch (error) {
         console.error("Eroare la obținerea informațiilor utilizatorului:", error);
-        res.status(500).json({ message: "Eroare internă a serverului." });
+        res.status(500).json({ 
+            success: false,
+            message: "Eroare internă a serverului.",
+            error: error.message 
+        });
     }
 };
 
