@@ -12,5 +12,8 @@ app.use(cors({
 
 app.use(express.json());
 app.use("/api", routes);
+app.get("/", (req, res) => {
+    res.send("Server is working!");
+});
 
 module.exports = app;
