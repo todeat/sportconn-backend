@@ -1,0 +1,16 @@
+// src/routes/index.js
+const express = require("express");
+const router = express.Router();
+const sportRoutes  = require("./sportRoutes");
+const cityRoutes  = require("./cityRoutes");
+const userRoutes    = require("./userRoutes");
+const locationRoutes = require("./locationRoutes");
+const reservationRoutes = require("./reservationRoutes");
+
+router.use("/sports", sportRoutes);
+router.use("/cities", cityRoutes)
+router.use("/user", userRoutes);
+router.use("/locations", locationRoutes);
+router.use("/reservations", reservationRoutes);
+
+module.exports = router;
