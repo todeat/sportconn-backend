@@ -18,6 +18,7 @@ exports.getAvailableTimeSlots = async (req, res) => {
         };
 
         const availableTimeSlots = await reservationModel.getAvailableTimeSlots(requestData);
+        console.log(availableTimeSlots);
         res.json(availableTimeSlots);
 
     } catch (error) {

@@ -71,7 +71,6 @@ exports.getUserInfo = async (req, res) => {
         }
 
         // Ne asigurăm că toate câmpurile necesare există
-        console.log("Returning user info:", JSON.stringify(userInfo, null, 2));
 
         res.json({
             success: true,
