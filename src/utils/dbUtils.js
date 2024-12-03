@@ -236,6 +236,17 @@ async function getLocationPhoneNumber(locationId) {
     }
 }
 
+async function isUserVerified(uid) {
+    const result = await db.query(
+        `SELECT EXISTS(
+            SELECT 1 FROM mod_dms_gen_sconn___email_verifications 
+            WHERE user_id = $1 AND is_verified = true
+        ) as is_verified`,
+        [uid]
+    );
+    return result.rows[0].is_verified;
+}
+
 
 
 module.exports = {
@@ -250,5 +261,6 @@ module.exports = {
     getCourtsByLocationId,
     getLocationSchedule,
     getLocationPhoneNumber,
-    isUserAdmin
+    isUserAdmin,
+    isUserVerified
 };

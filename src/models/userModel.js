@@ -1,6 +1,6 @@
 // src/models/userModel.js
 const db = require("../config/db");
-const { generateUniqueUsername} = require("../utils/dbUtils");
+const { generateUniqueUsername, isUserVerified} = require("../utils/dbUtils");
 
 // Funcție pentru a crea un nou utilizator
 async function createUser(data) {
@@ -150,6 +150,35 @@ async function checkUserExists(data) {
     };
 }
 
+async function updateEmail(uid, newEmail) {
+    try {
+        
+        const isVerified = await isUserVerified(uid);
+        if (isVerified) {
+            throw new Error("Emailul verificat nu poate fi modificat");
+        }
+
+        const result = await db.query(
+            `UPDATE mod_dms_gen_sconn___users 
+             SET email = $1 
+             WHERE uid = $2
+             RETURNING email`,
+            [newEmail, uid]
+        );
+
+        return {
+            success: true,
+            message: "Email actualizat cu succes",
+            email: result.rows[0].email
+        };
+
+
+    } catch (error) {
+        throw error;
+    }
+}
+ 
+
 
 
 
@@ -158,5 +187,6 @@ module.exports = {
     checkUserExistsByUid,
     getUserBasicInfo,
     getUserAdminLocations,
-    checkUserExists
+    checkUserExists,
+    updateEmail
 };

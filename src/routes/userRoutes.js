@@ -8,5 +8,6 @@ const verifyToken = require("../middleware/authMiddleware");
 router.post("/createUser", verifyToken, userController.createUser);
 router.get("/getUserInfo", verifyToken, userController.getUserInfo);
 router.post("/checkUserExists", userController.checkUserExists);
+router.put("/update-email", verifyToken, userController.updateEmail);
 
 module.exports = router;

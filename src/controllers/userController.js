@@ -100,3 +100,27 @@ exports.checkUserExists = async (req, res) => {
     }
 };
 
+
+exports.updateEmail = async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { email } = req.body;
+ 
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email-ul este obligatoriu"
+            });
+        }
+ 
+        const result = await userModel.updateEmail(uid, email);
+        res.json(result);
+ 
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+ };
+ 

@@ -1,7 +1,5 @@
 
 
-
-
 function roundToNextHalfHour(time) {
     const date = new Date(time);
     let minutes = date.getMinutes();
