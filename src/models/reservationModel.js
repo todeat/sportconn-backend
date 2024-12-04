@@ -350,9 +350,17 @@ async function getUserReservations(uid, isAdmin = false) {
                 cal.durata,
                 cal.isAdminReservation,
                 c.name AS "courtName",
+                l.id AS "locationId",
                 l.name AS "locationName",
                 s.name AS "sportName",
                 cit.name AS "cityName",
+                (
+                    SELECT phoneNumber 
+                    FROM mod_dms_gen_sconn___admin_locations 
+                    WHERE locationId = l.id 
+                    AND role = 'admin' 
+                    LIMIT 1
+                ) AS "phoneNumber",
                 CASE 
                     WHEN cal.dataOraStart > $1 THEN 'upcoming'
                     ELSE 'last'
@@ -398,11 +406,12 @@ async function getUserReservations(uid, isAdmin = false) {
                 courtName: row.courtName,
                 locationName: row.locationName,
                 sportName: row.sportName,
-                cityName: row.cityName
+                cityName: row.cityName,
+                phoneNumber: row.phoneNumber || null
             };
 
             if (row.reservationType === 'upcoming') {
-                upcoming_reservations.push(reservation);
+                upcoming_reservations.unshift(reservation);
             } else if (last_reservations.length < 5) {
                 last_reservations.push(reservation);
             }
@@ -425,7 +434,14 @@ async function getUserReservations(uid, isAdmin = false) {
                     c.name AS "courtName",
                     l.name AS "locationName",
                     s.name AS "sportName",
-                    cit.name AS "cityName"
+                    cit.name AS "cityName",
+                    (
+                        SELECT phoneNumber 
+                        FROM mod_dms_gen_sconn___admin_locations 
+                        WHERE locationId = l.id 
+                        AND role = 'admin' 
+                        LIMIT 1
+                    ) AS "phoneNumber"
                 FROM 
                     mod_dms_gen_sconn___calendar cal
                 JOIN 
@@ -454,7 +470,8 @@ async function getUserReservations(uid, isAdmin = false) {
                 courtName: row.courtName,
                 locationName: row.locationName,
                 sportName: row.sportName,
-                cityName: row.cityName
+                cityName: row.cityName,
+                phoneNumber: row.phoneNumber || null
             }));
         }
 
