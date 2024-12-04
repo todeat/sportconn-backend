@@ -337,18 +337,19 @@ async function saveReservation(data) {
     }
 }
 
-async function getUserReservations(uid) {
+async function getUserReservations(uid, isAdmin = false) {
     try {
         const currentDateTime = new Date().toISOString();
         
+        // Base query for user reservations
         const sql = `
             SELECT 
                 cal.id AS "reservationId",
                 cal.dataOraStart AS "dataOraStart",
                 cal.dataOraEnd AS "dataOraEnd",
                 cal.durata,
+                cal.isAdminReservation,
                 c.name AS "courtName",
-                l.id AS "locationId",
                 l.name AS "locationName",
                 s.name AS "sportName",
                 cit.name AS "cityName",
@@ -366,12 +367,11 @@ async function getUserReservations(uid) {
                 mod_dms_gen_sconn___sports s ON c.sport = s.id
             JOIN 
                 mod_dms_gen_sconn___cities cit ON l.cityId = cit.id
-            JOIN
-                mod_dms_gen_sconn___users u ON cal.userId = u.uid
             WHERE 
-                u.uid = $2
+                cal.userId = $2
+                AND cal.isAdminReservation = false
             ORDER BY 
-                cal.dataOraStart DESC
+                cal.dataOraStart ASC
         `;
 
         const result = await db.query(sql, [currentDateTime, uid]);
@@ -379,16 +379,16 @@ async function getUserReservations(uid) {
         if (result.rows.length === 0) {
             return {
                 success: false,
-                message: "Nu s-au găsit rezervări pentru acest utilizator."
+                message: "Nu s-au găsit rezervări pentru acest utilizator.",
+                upcoming_reservations: [],
+                last_reservations: []
             };
         }
 
         const upcoming_reservations = [];
         const last_reservations = [];
-        const admin_upcoming_reservations = [];
-        const admin_last_reservations = [];
 
-        // Process each reservation
+        // Process reservations
         for (const row of result.rows) {
             const reservation = {
                 reservationId: row.reservationId,
@@ -396,41 +396,69 @@ async function getUserReservations(uid) {
                 dataOraEnd: row.dataOraEnd,
                 durata: row.durata,
                 courtName: row.courtName,
-                phoneNumber: await getLocationPhoneNumber(row.locationId),
                 locationName: row.locationName,
                 sportName: row.sportName,
                 cityName: row.cityName
             };
 
-            // Check if user is admin for this location
-            const isAdmin = await isUserAdminOfLocation(uid, row.locationId);
-
             if (row.reservationType === 'upcoming') {
-                if (isAdmin) {
-                    admin_upcoming_reservations.unshift(reservation);
-                } else {
-                    upcoming_reservations.unshift(reservation);
-                }
-            } else {
-                if (isAdmin) {
-                    if (admin_last_reservations.length < 10) {
-                        admin_last_reservations.push(reservation);
-                    }
-                } else {
-                    if (last_reservations.length < 10) {
-                        last_reservations.push(reservation);
-                    }
-                }
+                upcoming_reservations.push(reservation);
+            } else if (last_reservations.length < 5) {
+                last_reservations.push(reservation);
             }
         }
 
-        return {
+        const response = {
             success: true,
             upcoming_reservations,
-            last_reservations,
-            admin_upcoming_reservations,
-            admin_last_reservations
+            last_reservations
         };
+
+        // If user is admin, add admin reservations
+        if (isAdmin) {
+            const adminSql = `
+                SELECT 
+                    cal.id AS "reservationId",
+                    cal.dataOraStart AS "dataOraStart",
+                    cal.dataOraEnd AS "dataOraEnd",
+                    cal.durata,
+                    c.name AS "courtName",
+                    l.name AS "locationName",
+                    s.name AS "sportName",
+                    cit.name AS "cityName"
+                FROM 
+                    mod_dms_gen_sconn___calendar cal
+                JOIN 
+                    mod_dms_gen_sconn___courts c ON cal.courtId = c.id
+                JOIN 
+                    mod_dms_gen_sconn___locations l ON c.locationId = l.id
+                JOIN 
+                    mod_dms_gen_sconn___sports s ON c.sport = s.id
+                JOIN 
+                    mod_dms_gen_sconn___cities cit ON l.cityId = cit.id
+                WHERE 
+                    cal.userId = $1
+                    AND cal.isAdminReservation = true
+                    AND cal.dataOraStart > $2
+                ORDER BY 
+                    cal.dataOraStart ASC
+            `;
+
+            const adminResult = await db.query(adminSql, [uid, currentDateTime]);
+            
+            response.admin_upcoming_reservations = adminResult.rows.map(row => ({
+                reservationId: row.reservationId,
+                dataOraStart: row.dataOraStart,
+                dataOraEnd: row.dataOraEnd,
+                durata: row.durata,
+                courtName: row.courtName,
+                locationName: row.locationName,
+                sportName: row.sportName,
+                cityName: row.cityName
+            }));
+        }
+
+        return response;
 
     } catch (error) {
         console.error("Error in getUserReservations:", error);
