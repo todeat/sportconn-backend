@@ -1,6 +1,6 @@
 // src/models/userModel.js
 const db = require("../config/db");
-const { generateUniqueUsername, isUserVerified} = require("../utils/dbUtils");
+const { generateUniqueUsername, isEmailVerified} = require("../utils/dbUtils");
 
 // Funcție pentru a crea un nou utilizator
 async function createUser(data) {
@@ -153,7 +153,7 @@ async function checkUserExists(data) {
 async function updateEmail(uid, newEmail) {
     try {
         
-        const isVerified = await isUserVerified(uid);
+        const isVerified = await isEmailVerified(uid);
         if (isVerified) {
             throw new Error("Emailul verificat nu poate fi modificat");
         }
