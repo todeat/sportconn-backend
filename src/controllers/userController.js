@@ -1,6 +1,6 @@
 // src/controllers/userController.js
 const userModel = require("../models/userModel");
-const { generateUniqueUsername, isUserAdmin } = require("../utils/dbUtils");
+const { generateUniqueUsername, isUserAdmin, isEmailVerified } = require("../utils/dbUtils");
 
 const locationModel = require("../models/locationModel");
 
@@ -38,6 +38,9 @@ exports.getUserInfo = async (req, res) => {
         if (!userInfo) {
             return res.status(404).json({ message: "Utilizatorul nu a fost găsit." });
         }
+
+        const isEmailVerifiedStatus = await isEmailVerified(uid);
+        userInfo.isEmailVerified = isEmailVerifiedStatus;
 
         // Verifică dacă utilizatorul este admin
         const isAdminUser = await isUserAdmin(uid);

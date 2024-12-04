@@ -236,15 +236,22 @@ async function getLocationPhoneNumber(locationId) {
     }
 }
 
-async function isUserVerified(uid) {
-    const result = await db.query(
-        `SELECT EXISTS(
-            SELECT 1 FROM mod_dms_gen_sconn___email_verifications 
-            WHERE user_id = $1 AND is_verified = true
-        ) as is_verified`,
-        [uid]
-    );
-    return result.rows[0].is_verified;
+
+async function isEmailVerified(uid) {
+    try {
+        const result = await db.query(
+            `SELECT is_verified 
+             FROM mod_dms_gen_sconn___email_verifications 
+             WHERE uid = $1`,
+            [uid]
+        );
+
+        // Return false if no record found, otherwise return the is_verified value
+        return result.rows.length > 0 ? result.rows[0].is_verified : false;
+    } catch (error) {
+        console.error("Error in isEmailVerified:", error);
+        throw error;
+    }
 }
 
 
@@ -262,5 +269,6 @@ module.exports = {
     getLocationSchedule,
     getLocationPhoneNumber,
     isUserAdmin,
-    isUserVerified
+    isEmailVerified
+
 };
