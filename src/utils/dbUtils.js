@@ -237,22 +237,6 @@ async function getLocationPhoneNumber(locationId) {
 }
 
 
-async function isEmailVerified(uid) {
-    try {
-        const result = await db.query(
-            `SELECT is_verified 
-             FROM mod_dms_gen_sconn___email_verifications 
-             WHERE uid = $1`,
-            [uid]
-        );
-
-        // Return false if no record found, otherwise return the is_verified value
-        return result.rows.length > 0 ? result.rows[0].is_verified : false;
-    } catch (error) {
-        console.error("Error in isEmailVerified:", error);
-        throw error;
-    }
-}
 
 async function getUserEmailByUid(uid) {
     try {
@@ -305,7 +289,6 @@ module.exports = {
     getLocationSchedule,
     getLocationPhoneNumber,
     isUserAdmin,
-    isEmailVerified,
     getUserEmailByUid,
     isUserEmailVerified
 };
