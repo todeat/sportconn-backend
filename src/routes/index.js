@@ -6,11 +6,14 @@ const cityRoutes  = require("./cityRoutes");
 const userRoutes    = require("./userRoutes");
 const locationRoutes = require("./locationRoutes");
 const reservationRoutes = require("./reservationRoutes");
+const emailVerificationRoutes = require("./emailVerificationRoutes");
 
 router.use("/sports", sportRoutes);
 router.use("/cities", cityRoutes)
 router.use("/user", userRoutes);
 router.use("/locations", locationRoutes);
 router.use("/reservations", reservationRoutes);
+router.use("/email-verification", emailVerificationRoutes);
+
 
 module.exports = router;

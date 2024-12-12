@@ -254,6 +254,42 @@ async function isEmailVerified(uid) {
     }
 }
 
+async function getUserEmailByUid(uid) {
+    try {
+        const result = await db.query(
+            `SELECT email 
+             FROM mod_dms_gen_sconn___users 
+             WHERE uid = $1`,
+            [uid]
+        );
+
+        if (result.rows.length === 0) {
+            throw new Error("Utilizatorul nu a fost găsit");
+        }
+
+        return result.rows[0].email;
+    } catch (error) {
+        console.error("Error in getUserEmailByUid:", error);
+        throw error;
+    }
+}
+
+async function isUserEmailVerified(uid) {
+    try {
+        const result = await db.query(
+            `SELECT is_verified 
+             FROM mod_dms_gen_sconn___email_verifications 
+             WHERE uid = $1`,
+            [uid]
+        );
+
+        return result.rows.length > 0 && result.rows[0].is_verified;
+    } catch (error) {
+        console.error("Error in isUserEmailVerified:", error);
+        throw error;
+    }
+}
+
 
 
 module.exports = {
@@ -269,6 +305,7 @@ module.exports = {
     getLocationSchedule,
     getLocationPhoneNumber,
     isUserAdmin,
-    isEmailVerified
-
+    isEmailVerified,
+    getUserEmailByUid,
+    isUserEmailVerified
 };
