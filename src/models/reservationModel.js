@@ -6,10 +6,13 @@ const {
     isUserAdminOfLocation,
     getLocationSchedule,
     checkUserIsLoggedAndAdminOfLocation,
-    getLocationPhoneNumber
+    getLocationPhoneNumber,
+    getUserInfoByUid,
+    getCourtInfoByCourtId
 } = require("../utils/dbUtils");
 const { parse, format, isToday } = require('date-fns');
 const { getAllLocationInfo } = require("../utils/locationQueries");
+const { notifyAdmins } = require("../notifications");
 
 
 // În reservationModel.js, funcția getAvailableTimeSlots
@@ -327,6 +330,36 @@ async function saveReservation(data) {
              RETURNING id`,
             [dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdmin]
         );
+
+        if (!isAdmin) {
+            // Obținem informațiile despre utilizator și teren
+            const [userInfo, courtInfo] = await Promise.all([
+                getUserInfoByUid(data.userId),
+                getCourtInfoByCourtId(data.courtId)
+            ]);
+
+            if (!userInfo) {
+                throw new Error("Nu s-au putut găsi informațiile despre utilizator");
+            }
+
+            if (!courtInfo) {
+                throw new Error("Nu s-au putut găsi informațiile despre teren");
+            }
+
+            // Trimitem notificare către admini doar dacă nu e rezervare de admin
+            notifyAdmins(db, 'newReservation', {
+                locationId: courtInfo.location_id,
+                locationName: courtInfo.location_name,
+                courtName: courtInfo.court_name,
+                sportName: courtInfo.sport_name,
+                startTime: data.dataOraStart,
+                endTime: data.dataOraEnd,
+                clientName: `${userInfo.firstname} ${userInfo.lastname}`,
+                clientPhone: userInfo.phonenumber
+            }).catch(error => {
+                console.error('Failed to send notification:', error);
+            });
+        }
 
         return {
             success: true,

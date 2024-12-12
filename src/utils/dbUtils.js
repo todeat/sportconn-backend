@@ -274,6 +274,45 @@ async function isUserEmailVerified(uid) {
     }
 }
 
+async function getAdminEmails(db, locationId) {
+    const result = await db.query(`
+        SELECT DISTINCT u.email
+        FROM mod_dms_gen_sconn___admin_locations al
+        JOIN mod_dms_gen_sconn___users u ON al.uid = u.uid
+        WHERE al.locationId = $1 AND al.role = 'admin'
+    `, [locationId]);
+    
+    return result.rows.map(row => row.email);
+}
+
+async function getCourtInfoByCourtId(courtId) {
+    const result = await db.query(
+        `SELECT 
+            c.name AS court_name, 
+            l.name AS location_name, 
+            l.id AS location_id,
+            s.name AS sport_name
+         FROM mod_dms_gen_sconn___courts c
+         JOIN mod_dms_gen_sconn___locations l ON c.locationId = l.id
+         JOIN mod_dms_gen_sconn___sports s ON c.sport = s.id
+         WHERE c.id = $1`,
+        [courtId]
+    );
+    
+    return result.rows[0] || null;
+}
+
+
+async function getUserInfoByUid(uid) {
+    const result = await db.query(
+        `SELECT firstName, lastName, phoneNumber, email
+         FROM mod_dms_gen_sconn___users
+         WHERE uid = $1`,
+        [uid]
+    );
+    
+    return result.rows[0] || null;
+}
 
 
 module.exports = {
@@ -290,5 +329,8 @@ module.exports = {
     getLocationPhoneNumber,
     isUserAdmin,
     getUserEmailByUid,
-    isUserEmailVerified
+    isUserEmailVerified,
+    getAdminEmails,
+    getCourtInfoByCourtId,
+    getUserInfoByUid
 };
