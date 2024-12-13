@@ -70,7 +70,8 @@ function combineScheduleData(availabilityCourts, reservations, date) {
                     id: reservation.reservationId,
                     name: reservation.reservationName,
                     duration: reservation.duration,
-                    user: reservation.user
+                    user: reservation.user,
+                    totalPrice: reservation.totalPrice
                 }
             });
         });

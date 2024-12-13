@@ -8,7 +8,8 @@ const {
     checkUserIsLoggedAndAdminOfLocation,
     getLocationPhoneNumber,
     getUserInfoByUid,
-    getCourtInfoByCourtId
+    getCourtInfoByCourtId,
+    calculateReservationPrice
 } = require("../utils/dbUtils");
 const { parse, format, isToday } = require('date-fns');
 const { getAllLocationInfo } = require("../utils/locationQueries");
@@ -118,6 +119,7 @@ async function getAvailableTimeSlots(data) {
                 `SELECT 
                     c.id, 
                     c.name,
+                    c.pricePerHour,
                     s.id AS sport_id,
                     s.name AS sport_name
                 FROM 
@@ -199,7 +201,8 @@ async function getAvailableTimeSlots(data) {
 
                 return { 
                     courtId: court.id, 
-                    courtName: court.name, 
+                    courtName: court.name,
+                    pricePerHour: court.priceperhour, 
                     sport: {
                         id: court.sport_id,
                         name: court.sport_name
@@ -243,6 +246,8 @@ async function saveReservation(data) {
         const { courtId, userId, dataOraStart, dataOraEnd, name } = data;
         const dataRezervare = new Date().toISOString().slice(0, 19).replace('T', ' ');
         
+        const totalPrice = await calculateReservationPrice(dataOraStart, dataOraEnd, courtId);
+
         // Check if start time is in the past
         const currentTime = Date.now();
         const startTime = new Date(dataOraStart).getTime();
@@ -325,10 +330,10 @@ async function saveReservation(data) {
         // Insert reservation
         const result = await db.query(
             `INSERT INTO mod_dms_gen_sconn___calendar 
-             (dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdminReservation)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             (dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdminReservation, totalPrice)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING id`,
-            [dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdmin]
+            [dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdmin, totalPrice]
         );
 
         if (!isAdmin) {
@@ -355,7 +360,8 @@ async function saveReservation(data) {
                 startTime: data.dataOraStart,
                 endTime: data.dataOraEnd,
                 clientName: `${userInfo.firstname} ${userInfo.lastname}`,
-                clientPhone: userInfo.phonenumber
+                clientPhone: userInfo.phonenumber,
+                totalPrice: totalPrice
             }).catch(error => {
                 console.error('Failed to send notification:', error);
             });
@@ -363,7 +369,8 @@ async function saveReservation(data) {
 
         return {
             success: true,
-            rezervareId: result.rows[0].id
+            rezervareId: result.rows[0].id,
+            totalPrice: totalPrice
         };
     } catch (error) {
         throw error;
@@ -382,6 +389,7 @@ async function getUserReservations(uid, isAdmin = false) {
                 cal.dataOraEnd AS "dataOraEnd",
                 cal.durata,
                 cal.isAdminReservation,
+                cal.totalprice AS "totalPrice",
                 c.name AS "courtName",
                 l.id AS "locationId",
                 l.name AS "locationName",
@@ -440,6 +448,7 @@ async function getUserReservations(uid, isAdmin = false) {
                 locationName: row.locationName,
                 sportName: row.sportName,
                 cityName: row.cityName,
+                totalPrice: row.totalPrice,
                 phoneNumber: row.phoneNumber || null
             };
 
@@ -464,6 +473,7 @@ async function getUserReservations(uid, isAdmin = false) {
                     cal.dataOraStart AS "dataOraStart",
                     cal.dataOraEnd AS "dataOraEnd",
                     cal.durata,
+                    cal.totalprice AS "totalPrice",
                     c.name AS "courtName",
                     l.name AS "locationName",
                     s.name AS "sportName",
@@ -502,6 +512,7 @@ async function getUserReservations(uid, isAdmin = false) {
                 durata: row.durata,
                 courtName: row.courtName,
                 locationName: row.locationName,
+                totalPrice: row.totalPrice,
                 sportName: row.sportName,
                 cityName: row.cityName,
                 phoneNumber: row.phoneNumber || null

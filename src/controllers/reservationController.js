@@ -37,7 +37,6 @@ exports.saveReservation = async (req, res) => {
         // Verificăm dacă avem toate datele necesare
         const requiredFields = ['courtId', 'dataOraStart', 'dataOraEnd', 'name'];
         const missingFields = requiredFields.filter(field => !req.body[field]);
-        
         if (missingFields.length > 0) {
             return res.status(400).json({
                 success: false,

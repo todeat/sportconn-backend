@@ -56,6 +56,12 @@ const emailTemplates = {
                             <span style="margin-left: 8px;">${data.clientPhone}</span>
                         </td>
                     </tr>
+                    <tr>
+                    <td style="padding: 12px 0; border-bottom: 1px solid #DCE1DE;">
+                        <strong style="color: #216869;">Preț total:</strong>
+                        <span style="margin-left: 8px;">${data.totalPrice} RON</span>
+                    </td>
+                    </tr>
                 </table>
 
                 <div style="margin-top: 32px; padding: 16px; background-color: #9CC5A1; border-radius: 6px; color: #1F2421;">

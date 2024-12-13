@@ -314,6 +314,45 @@ async function getUserInfoByUid(uid) {
     return result.rows[0] || null;
 }
 
+async function getCourtPricePerHour(courtId) {
+    try {
+        const result = await db.query(
+            `SELECT pricePerHour 
+             FROM mod_dms_gen_sconn___courts 
+             WHERE id = $1`,
+            [courtId]
+        );
+
+        if (result.rows.length === 0) {
+            throw new Error("Terenul nu a fost găsit");
+        }
+
+        return parseFloat(result.rows[0].priceperhour);
+    } catch (error) {
+        console.error("Error in getCourtPricePerHour:", error);
+        throw error;
+    }
+}
+
+async function calculateReservationPrice(dataOraStart, dataOraEnd, courtId) {
+    try {
+        const pricePerHour = await getCourtPricePerHour(courtId);
+        
+        // Calculăm diferența în ore
+        const startTime = new Date(dataOraStart);
+        const endTime = new Date(dataOraEnd);
+        const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+        
+        // Calculăm prețul total
+        const totalPrice = pricePerHour * durationHours;
+        
+        return parseFloat(totalPrice.toFixed(2)); // Rotunjim la 2 zecimale
+    } catch (error) {
+        console.error("Error in calculateReservationPrice:", error);
+        throw error;
+    }
+}
+
 
 module.exports = {
     generateUniqueUsername,
@@ -332,5 +371,6 @@ module.exports = {
     isUserEmailVerified,
     getAdminEmails,
     getCourtInfoByCourtId,
-    getUserInfoByUid
+    getUserInfoByUid,
+    calculateReservationPrice
 };

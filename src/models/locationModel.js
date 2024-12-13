@@ -435,6 +435,7 @@ async function getLocationReservations({ locationId, date = new Date().toISOStri
             cal.courtid,
             cal.name AS "reservationName",
             cal.durata,
+            cal.totalprice AS "totalPrice",
             cal.abonamentId,
             c.name AS "courtName",
             s.name AS "sportName",
@@ -483,6 +484,7 @@ async function getLocationReservations({ locationId, date = new Date().toISOStri
         courtName: reservation.courtName,
         sportName: reservation.sportName,
         reservationName: reservation.reservationName,
+        totalPrice: reservation.totalPrice,
         user: {
             userId: reservation.userid,
             name: `${reservation.firstname || ''} ${reservation.lastname || ''}`.trim(),
