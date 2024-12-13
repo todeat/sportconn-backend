@@ -8,6 +8,8 @@ const courtModel = require('./courtModel');
 const reservationModel = require("./reservationModel");
 const { combineScheduleData } = require("../utils/functionUtils");
 const { getAllLocationInfo } = require("../utils/locationQueries");
+const { sendEmail } = require("../notifications/services/emailService");
+const emailTemplates = require("../notifications/templates/emailTemplates");
 
 
 // Funcție pentru obținerea terenurilor asociate unei locații
@@ -100,6 +102,17 @@ async function addLocationPending(uid, data) {
     const phoneNumber = await getPhoneNumberByUid(uid);
     const currentDateTime = new Date().toISOString();
 
+    const adminInfo = await db.query(
+        `SELECT 
+        firstname AS "firstName",
+        lastname AS "lastName",
+        email,
+        phonenumber AS "phoneNumber" 
+        FROM mod_dms_gen_sconn___users 
+        WHERE uid = $1`,
+        [uid]
+    );
+
     // Inserăm locația
     const locationId = await addLocation({
         name: locationInfo.locationName,
@@ -158,6 +171,32 @@ async function addLocationPending(uid, data) {
 
         courtIds.push(courtId);
     }
+
+
+    try {
+        const emailTemplate = emailTemplates.newLocationRegistration({
+            adminInfo: adminInfo.rows[0],
+            locationInfo: {
+                locationName: locationInfo.locationName,
+                city: locationInfo.city,
+                address: locationInfo.address,
+                lat: locationInfo.lat,
+                lng: locationInfo.lng
+            },
+            courts: courtsInfo
+        });
+
+        await sendEmail(
+            process.env.SUPERADMIN_EMAIL,
+            emailTemplate.subject,
+            emailTemplate.body
+        );
+    } catch (error) {
+        console.error('Failed to send superadmin notification:', error);
+        // Don't throw error here, as the location was already created successfully
+    }
+
+
 
     return {
         success: true,
