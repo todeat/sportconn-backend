@@ -353,6 +353,22 @@ async function calculateReservationPrice(dataOraStart, dataOraEnd, courtId) {
     }
 }
 
+async function hasPendingLocation(uid) {
+    try {
+        const result = await db.query(
+            `SELECT COUNT(*) as count
+             FROM mod_dms_gen_sconn___pending_locations pl
+             WHERE pl.uid = $1 AND pl.status = 'pending'`,
+            [uid]
+        );
+        
+        return result.rows[0].count > 0;
+    } catch (error) {
+        console.error("Error in hasPendingLocation:", error);
+        throw error;
+    }
+}
+
 
 module.exports = {
     generateUniqueUsername,
@@ -372,5 +388,6 @@ module.exports = {
     getAdminEmails,
     getCourtInfoByCourtId,
     getUserInfoByUid,
-    calculateReservationPrice
+    calculateReservationPrice,
+    hasPendingLocation
 };
