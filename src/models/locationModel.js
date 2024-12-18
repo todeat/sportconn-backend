@@ -1,6 +1,6 @@
 // src/models/locationModel.js
 const db = require("../config/db");
-const { getCityIdByName, getCourtsByLocationId } = require("../utils/dbUtils");
+const { getCityIdByName, getCourtsByLocationId, isUserEmailVerified } = require("../utils/dbUtils");
 const { getPhoneNumberByUid } = require("../utils/dbUtils");
 const { getSportIdByName } = require("../utils/dbUtils");
 const { addCourt } = require("./courtModel");
@@ -78,6 +78,8 @@ async function toggleLocationValidation(data) {
 
 //rest
 async function addLocationPending(uid, data) {
+
+
     const { locationInfo, courtsInfo } = data;
 
     // Validăm prezența programului
