@@ -9,7 +9,7 @@ const checkPendingLocation = require("../middleware/pendingLocationMiddleware");
 // Ruta pentru adăugarea unei locații în așteptare, protejată de middleware-ul de autentificare
 router.post("/addLocationPending",
      verifyToken, 
-     requireVerifiedEmail,
+    //  requireVerifiedEmail,
      checkPendingLocation, 
      locationController.addLocationPending);
 router.post("/toggle-validation", verifyToken, locationController.toggleLocationValidation);
