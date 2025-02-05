@@ -12,14 +12,12 @@ const { sendEmail } = require("../notifications/services/emailService");
 const emailTemplates = require("../notifications/templates/emailTemplates");
 
 
-// Funcție pentru obținerea terenurilor asociate unei locații
 
 //rest
 async function toggleLocationValidation(data) {
     const { locationId, uid } = data;
 
     try {
-        // Verifică dacă locația este în pending
         const isPending = await isLocationPending(locationId);
         if (isPending) {
             return {
@@ -28,7 +26,7 @@ async function toggleLocationValidation(data) {
             };
         }
 
-        // Obține starea curentă a locației
+        
         const currentStateResult = await db.query(
             `SELECT valid 
              FROM mod_dms_gen_sconn___locations 
@@ -43,11 +41,11 @@ async function toggleLocationValidation(data) {
             };
         }
 
-        // Inversează starea
+        
         const currentState = currentStateResult.rows[0].valid;
         const newState = !currentState;
 
-        // Actualizează starea în baza de date
+        
         const updateResult = await db.query(
             `UPDATE mod_dms_gen_sconn___locations 
              SET valid = $1 
@@ -82,7 +80,7 @@ async function addLocationPending(uid, data) {
 
     const { locationInfo, courtsInfo } = data;
 
-    // Validăm prezența programului
+    
     if (!locationInfo.schedule || !Array.isArray(locationInfo.schedule) || locationInfo.schedule.length !== 7) {
         throw new Error("Programul locației este obligatoriu și trebuie să conțină date pentru toate zilele săptămânii");
     }
@@ -115,7 +113,7 @@ async function addLocationPending(uid, data) {
         [uid]
     );
 
-    // Inserăm locația
+    
     const locationId = await addLocation({
         name: locationInfo.locationName,
         lat: locationInfo.lat,
@@ -128,17 +126,17 @@ async function addLocationPending(uid, data) {
         throw new Error("Eroare la inserarea locației.");
     }
 
-    // Adăugăm programul locației
+    
     await addLocationSchedule(locationId, locationInfo.schedule);
 
-    // Inserăm în admin_locations
+    
     const adminLocationResult = await db.query(
         `INSERT INTO mod_dms_gen_sconn___admin_locations (uid, locationId, phoneNumber, role)
          VALUES ($1, $2, $3, $4) RETURNING id`,
         [uid, locationId, phoneNumber, "admin"]
     );
 
-    // Inserăm în pending_locations
+    
     const pendingResult = await db.query(
         `INSERT INTO mod_dms_gen_sconn___pending_locations 
          (locationName, address, lat, lng, uid, phoneNumber, status, dateAdded, locationId)
@@ -155,7 +153,7 @@ async function addLocationPending(uid, data) {
         ]
     );
 
-    // Inserăm terenurile
+    
     const courtIds = [];
     for (const [index, court] of courtsInfo.entries()) {
         const courtId = await addCourt({
@@ -195,7 +193,6 @@ async function addLocationPending(uid, data) {
         );
     } catch (error) {
         console.error('Failed to send superadmin notification:', error);
-        // Don't throw error here, as the location was already created successfully
     }
 
 

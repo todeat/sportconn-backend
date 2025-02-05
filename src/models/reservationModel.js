@@ -16,8 +16,6 @@ const { getAllLocationInfo } = require("../utils/locationQueries");
 const { notifyAdmins } = require("../notifications");
 
 
-// În reservationModel.js, funcția getAvailableTimeSlots
-
 async function getAvailableTimeSlots(data) {
     const { cityId, sportId, selectedDate, locationId, courtId, minDuration = 1, token } = data;
 
@@ -26,7 +24,7 @@ async function getAvailableTimeSlots(data) {
         let locationIds = [];
         let courtIds = [];
 
-        // Verificăm admin status dacă avem locationId și token
+        
         if (locationId && token) {
             try {
                 await checkUserIsLoggedAndAdminOfLocation(token, locationId);
@@ -36,9 +34,9 @@ async function getAvailableTimeSlots(data) {
             }
         }
 
-        // Construim query pentru locații bazat pe parametrii disponibili
+        
         if (courtId) {
-            // Dacă avem courtId, obținem direct locationId asociat
+        
             const courtResult = await db.query(
                 'SELECT locationid FROM mod_dms_gen_sconn___courts WHERE id = $1',
                 [courtId]
@@ -48,7 +46,7 @@ async function getAvailableTimeSlots(data) {
                 courtIds = [courtId];
             }
         } else {
-            // Altfel, folosim cityId și/sau locationId pentru a găsi locațiile
+        
             let locationQuery = 'SELECT id FROM mod_dms_gen_sconn___locations WHERE 1=1';
             const queryParams = [];
             
@@ -68,7 +66,7 @@ async function getAvailableTimeSlots(data) {
             locationIds = locations.rows.map(location => location.id);
 
             if (locationIds.length > 0) {
-                // Găsim terenurile disponibile
+        
                 let courtQuery = `
                     SELECT id, locationid, name 
                     FROM mod_dms_gen_sconn___courts 
@@ -90,7 +88,7 @@ async function getAvailableTimeSlots(data) {
             return [];
         }
 
-        // Restul logicii rămâne neschimbată
+        
         const schedules = await db.query(`
             SELECT locationid, orastart, oraend, isopen
             FROM mod_dms_gen_sconn___location_schedules
@@ -107,7 +105,7 @@ async function getAvailableTimeSlots(data) {
             )
         `, [courtIds, selectedDate]);
 
-        // Procesarea și returnarea rezultatelor rămâne aceeași ca în codul original
+        
         const groupedResults = [];
         
         for (const locationId of locationIds) {
@@ -238,7 +236,7 @@ async function getAvailableTimeSlots(data) {
 
 async function saveReservation(data) {
     try {
-        // Validate required input data
+        
         if (!data.courtId || !data.userId || !data.dataOraStart || !data.dataOraEnd) {
             throw new Error("Datele de intrare sunt incomplete.");
         }
@@ -248,22 +246,22 @@ async function saveReservation(data) {
         
         const totalPrice = await calculateReservationPrice(dataOraStart, dataOraEnd, courtId);
 
-        // Check if start time is in the past
+        
         const currentTime = Date.now();
         const startTime = new Date(dataOraStart).getTime();
         if (startTime < currentTime) {
             throw new Error("Ora de start a rezervării nu poate fi în trecut.");
         }
 
-        // Calculate duration in hours
+        
         const durata = (new Date(dataOraEnd).getTime() - new Date(dataOraStart).getTime()) / (3600 * 1000);
 
-        // Check if end time is after start time
+        
         if (new Date(dataOraEnd) <= new Date(dataOraStart)) {
             throw new Error("Ora end nu poate fi aleasa inainte de ora start.");
         }
 
-        // Get locationId for this court
+        
         const locationId = await getLocationIdByCourtId(courtId);
         if (!locationId) {
             throw new Error("Terenul specificat nu există.");
@@ -291,13 +289,13 @@ async function saveReservation(data) {
         const reservationStartTime = new Date(dataOraStart).toTimeString().slice(0, 8);
         const reservationEndTime = new Date(dataOraEnd).toTimeString().slice(0, 8);
         
-        // Convertim toți timpii în minute
+        
         const startMinutes = timeToMinutes(reservationStartTime);
         const endMinutes = adjustTimeForMidnight(reservationEndTime, reservationStartTime);
         const locationStartMinutes = timeToMinutes(schedule.oraStart);
         const locationEndMinutes = adjustTimeForMidnight(schedule.oraEnd, schedule.oraStart);
         
-        // Verificăm dacă rezervarea se încadrează în program
+        
         const isStartValid = startMinutes >= locationStartMinutes;
         const isEndValid = endMinutes <= locationEndMinutes;
         
@@ -305,10 +303,10 @@ async function saveReservation(data) {
             throw new Error(`Rezervarea trebuie să fie în intervalul orar al locației: ${schedule.oraStart} - ${schedule.oraEnd}`);
         }
 
-        // Check if user is admin for this location using the utility function
+        
         const isAdmin = await isUserAdminOfLocation(userId, locationId);
 
-        // Check for overlapping reservations if user is not admin
+        
         if (!isAdmin) {
             const hasOverlap = await _verificaSuprapunereRezervariUtilizator(userId, dataOraStart, dataOraEnd);
             if (hasOverlap) {
@@ -316,7 +314,7 @@ async function saveReservation(data) {
             }
         }
 
-        // Check court availability
+        
         const isUnavailable = await _verificaDispoPeCourtIdDSDE({
             courtId,
             dataOraStart,
@@ -327,7 +325,7 @@ async function saveReservation(data) {
             throw new Error("Terenul nu este disponibil în intervalul selectat.");
         }
 
-        // Insert reservation
+        
         const result = await db.query(
             `INSERT INTO mod_dms_gen_sconn___calendar 
              (dataOraStart, dataOraEnd, courtId, dataRezervare, durata, userId, name, isAdminReservation, totalPrice)
@@ -337,7 +335,7 @@ async function saveReservation(data) {
         );
 
         if (!isAdmin) {
-            // Obținem informațiile despre utilizator și teren
+        
             const [userInfo, courtInfo] = await Promise.all([
                 getUserInfoByUid(data.userId),
                 getCourtInfoByCourtId(data.courtId)
@@ -351,7 +349,7 @@ async function saveReservation(data) {
                 throw new Error("Nu s-au putut găsi informațiile despre teren");
             }
 
-            // Trimitem notificare către admini doar dacă nu e rezervare de admin
+        
             notifyAdmins(db, 'newReservation', {
                 locationId: courtInfo.location_id,
                 locationName: courtInfo.location_name,
@@ -381,7 +379,7 @@ async function getUserReservations(uid, isAdmin = false) {
     try {
         const currentDateTime = new Date().toISOString();
         
-        // Base query for user reservations
+        
         const sql = `
             SELECT 
                 cal.id AS "reservationId",
@@ -437,7 +435,7 @@ async function getUserReservations(uid, isAdmin = false) {
         const upcoming_reservations = [];
         const last_reservations = [];
 
-        // Process reservations
+        
         for (const row of result.rows) {
             const reservation = {
                 reservationId: row.reservationId,
@@ -465,7 +463,7 @@ async function getUserReservations(uid, isAdmin = false) {
             last_reservations
         };
 
-        // If user is admin, add admin reservations
+        
         if (isAdmin) {
             const adminSql = `
                 SELECT 
@@ -581,7 +579,7 @@ async function getReservationInfo(reservationId) {
 
 async function getReservationsByCitySportDate(city, sport, date, options = {}) {
     try {
-        // Validate required parameters
+        
         if (!city || !sport || !date) {
             throw new Error("City, sport and date are required parameters");
         }
@@ -617,21 +615,21 @@ async function getReservationsByCitySportDate(city, sport, date, options = {}) {
             AND DATE(cal.dataOraStart) = $3
         `;
 
-        // Add optional locationId filter
+        
         if (options.locationId) {
             paramCount++;
             sql += ` AND l.id = $${paramCount}`;
             params.push(options.locationId);
         }
 
-        // Add optional courtId filter
+        
         if (options.courtId) {
             paramCount++;
             sql += ` AND c.id = $${paramCount}`;
             params.push(options.courtId);
         }
 
-        // Only show reservations from valid locations unless specified otherwise
+        
         if (!options.includeInvalidLocations) {
             sql += ` AND l.valid = true`;
         }
@@ -657,7 +655,7 @@ async function getReservationsByCitySportDate(city, sport, date, options = {}) {
 async function _verificaSuprapunereRezervariUtilizator(userId, dataOraStartDorita, dataOraEndDorita) {
     const dataDorita = new Date(dataOraStartDorita).toISOString().slice(0, 10);
 
-    // Check if user has any reservations on the desired date
+    
     const countResult = await db.query(
         `SELECT COUNT(*) as "numarRezervari"
          FROM mod_dms_gen_sconn___calendar 
@@ -671,7 +669,7 @@ async function _verificaSuprapunereRezervariUtilizator(userId, dataOraStartDorit
         return false;
     }
 
-    // Check for overlapping reservations
+    
     const overlapResult = await db.query(
         `SELECT * 
          FROM mod_dms_gen_sconn___calendar 

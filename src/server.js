@@ -1,14 +1,13 @@
 // src/server.js
-require("dotenv").config();  // Încarcă variabilele din .env
+require("dotenv").config(); 
 
 process.env.TZ = "Europe/Bucharest";
 
-const app = require("./app");  // Importă aplicația configurată din app.js
-const { port } = require("./config/config");  // Importă portul din configurare
+const app = require("./app"); 
+const { port } = require("./config/config");  
 
 
 
-// Pornește serverul pe portul specificat
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

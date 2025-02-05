@@ -2,21 +2,17 @@
 const db = require("../config/db");
 const { generateUniqueUsername, isUserEmailVerified} = require("../utils/dbUtils");
 
-// Funcție pentru a crea un nou utilizator
 async function createUser(data) {
     const { uid, email, phoneNumber, firstName, lastName} = data;
 
-    // Verificăm dacă utilizatorul există deja
     const userExists = await checkUserExistsByUid(uid);
     if (userExists) {
         throw new Error("Utilizatorul cu acest UID există deja.");
     }
 
-    // Generăm un username unic
     const baseUsername = (firstName + lastName).toLowerCase();
     const username = await generateUniqueUsername(baseUsername);
 
-    // Inserare utilizator în baza de date
     const sql = `
         INSERT INTO mod_dms_gen_sconn___users (uid, email, phoneNumber, firstName, lastName, username)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -29,7 +25,6 @@ async function createUser(data) {
     return result.rows[0];
 }
 
-// Funcție pentru a verifica dacă un utilizator cu uid-ul dat există deja
 async function checkUserExistsByUid(uid) {
     const sql = `
         SELECT COUNT(*) as count 
@@ -38,7 +33,7 @@ async function checkUserExistsByUid(uid) {
     `;
     const result = await db.query(sql, [uid]);
 
-    return result.rows[0].count > 0;  // Returnează true dacă există un utilizator cu acest uid
+    return result.rows[0].count > 0; 
 }
 
 async function getUserBasicInfo(uid) {
@@ -54,9 +49,8 @@ async function getUserBasicInfo(uid) {
     return result.rows[0] || null;
 }
 
-// Obține locațiile administrate de utilizator
+
 async function getUserAdminLocations(uid) {
-    // First get base location data
     const sqlLocations = `
         SELECT 
             al.locationId,
@@ -81,7 +75,6 @@ async function getUserAdminLocations(uid) {
 
     const locations = await db.query(sqlLocations, [uid]);
 
-    // Get schedule for each location
     const locationsWithSchedule = await Promise.all(
         locations.rows.map(async (location) => {
             const scheduleQuery = `
@@ -112,12 +105,11 @@ async function getUserAdminLocations(uid) {
 async function checkUserExists(data) {
     const { phoneNumber, email } = data;
 
-    // Verifică dacă numărul de telefon este furnizat
+
     if (!phoneNumber) {
         throw new Error("Numărul de telefon este obligatoriu.");
     }
 
-    // Verificăm existența utilizatorului după numărul de telefon
     let sql = "SELECT id FROM mod_dms_gen_sconn___users WHERE phoneNumber = $1";
     let result = await db.query(sql, [phoneNumber]);
 
@@ -129,7 +121,6 @@ async function checkUserExists(data) {
         };
     }
 
-    // Dacă utilizatorul nu este găsit după telefon, verificăm după email (dacă este furnizat)
     if (email) {
         sql = "SELECT id FROM mod_dms_gen_sconn___users WHERE email = $1";
         result = await db.query(sql, [email]);
@@ -143,7 +134,6 @@ async function checkUserExists(data) {
         }
     }
 
-    // Dacă utilizatorul nu este găsit nici după telefon, nici după email
     return {
         exists: false,
         message: "Utilizatorul nu există."

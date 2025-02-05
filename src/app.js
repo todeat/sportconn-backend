@@ -4,14 +4,14 @@ const routes = require("./routes");
 
 const app = express();
 
-// Configurează CORS pentru a permite cereri de la mai multe origini
+
 app.use(cors({
     origin: [
-        "http://localhost:3000",  // Pentru dezvoltare locală
-        "https://sportconn-frontend.vercel.app"  // Pentru producție
+        "http://localhost:3000",  // pt loc
+        "https://sportconn-frontend.vercel.app"  // pt prod
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,  // Dacă folosești cookies sau autentificare bazată pe sesiuni
+    credentials: true,
 }));
 
 app.use(express.json());

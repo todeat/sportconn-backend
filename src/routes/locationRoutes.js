@@ -6,7 +6,7 @@ const verifyToken = require("../middleware/authMiddleware");
 const requireVerifiedEmail = require("../middleware/emailVerifiedMiddleware");
 const checkPendingLocation = require("../middleware/pendingLocationMiddleware");
 
-// Ruta pentru adăugarea unei locații în așteptare, protejată de middleware-ul de autentificare
+
 router.post("/addLocationPending",
      verifyToken, 
     //  requireVerifiedEmail,

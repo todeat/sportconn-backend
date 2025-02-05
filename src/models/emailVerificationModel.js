@@ -44,7 +44,6 @@ async function createOrUpdateVerification(uid, email) {
     const expiresAt = new Date(Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000);
 
     try {
-        // Încercăm să actualizăm o înregistrare existentă
         const updateResult = await db.query(
             `UPDATE mod_dms_gen_sconn___email_verifications 
              SET code = $1, 
@@ -54,10 +53,9 @@ async function createOrUpdateVerification(uid, email) {
                  is_verified = false
              WHERE uid = $3
              RETURNING id`,
-            [code, expiresAt, uid]  // Am corectat ordinea parametrilor
+            [code, expiresAt, uid] 
         );
 
-        // Dacă nu există o înregistrare, o creăm
         if (updateResult.rows.length === 0) {
             await db.query(
                 `INSERT INTO mod_dms_gen_sconn___email_verifications 
@@ -67,7 +65,6 @@ async function createOrUpdateVerification(uid, email) {
             );
         }
 
-        // Trimitem email-ul cu codul
         const emailSent = await sendVerificationEmail(email, code);
         
         if (!emailSent) {
@@ -103,7 +100,6 @@ async function verifyCode(uid, code) {
 
         const verification = result.rows[0];
 
-        // Verificăm dacă codul a expirat
         if (new Date() > new Date(verification.expires_at)) {
             return {
                 success: false,
@@ -111,9 +107,7 @@ async function verifyCode(uid, code) {
             };
         }
 
-        // Verificăm codul
         if (verification.code !== code) {
-            // Incrementăm numărul de încercări
             await db.query(
                 `UPDATE mod_dms_gen_sconn___email_verifications 
                  SET attempts = attempts + 1,
@@ -128,7 +122,6 @@ async function verifyCode(uid, code) {
             };
         }
 
-        // Marcăm email-ul ca verificat
         await db.query(
             `UPDATE mod_dms_gen_sconn___email_verifications 
              SET is_verified = true 
